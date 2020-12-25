@@ -8,7 +8,7 @@ protocol Transport {
     func send(to url: WCURL, text: String)
     func listen(on url: WCURL,
                 onConnect: @escaping ((WCURL) -> Void),
-                onDisconnect: @escaping ((WCURL, Error?) -> Void),
+                onDisconnect: @escaping ((WCURL, String, UInt16) -> Void),
                 onTextReceive: @escaping (String, WCURL) -> Void)
     func isConnected(by url: WCURL) -> Bool
     func disconnect(from url: WCURL)
@@ -33,7 +33,7 @@ class Bridge: Transport {
 
     func listen(on url: WCURL,
                 onConnect: @escaping ((WCURL) -> Void),
-                onDisconnect: @escaping ((WCURL, Error?) -> Void),
+                onDisconnect: @escaping ((WCURL, String, UInt16) -> Void),
                 onTextReceive: @escaping (String, WCURL) -> Void) {
         dispatchPrecondition(condition: .notOnQueue(syncQueue))
         syncQueue.sync { [unowned self] in
@@ -43,13 +43,13 @@ class Bridge: Transport {
             } else {
                 connection = WebSocketConnection(url: url,
                                                  onConnect: { onConnect(url) },
-                                                 onDisconnect: { [weak self] error in
+                                                 onDisconnect: { [weak self] (reason, code) in
                                                     self?.releaseConnection(by: url)
-                                                    onDisconnect(url, error) },
+                                                    onDisconnect(url, reason, code) },
                                                  onTextReceive: { text in onTextReceive(text, url) })
                 self.connections.append(connection)
             }
-            if !connection.isOpen {
+            if !connection.isConnected {
                 connection.open()
             }
         }
@@ -61,7 +61,7 @@ class Bridge: Transport {
         syncQueue.sync { [unowned self] in
             connection = self.findConnection(url: url)
         }
-        return connection?.isOpen ?? false
+        return connection?.isConnected ?? false
     }
 
     func disconnect(from url: WCURL) {

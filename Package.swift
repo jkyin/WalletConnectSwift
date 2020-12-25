@@ -12,8 +12,8 @@ let package = Package(
             targets: ["WalletConnectSwift"])
     ],
     dependencies: [
-        .package(url: "https://github.com/krzyzanowskim/CryptoSwift.git", .upToNextMinor(from: "1.2.0")),
-        .package(url: "https://github.com/daltoniam/Starscream.git", .upToNextMinor(from: "3.1.0"))
+        .package(url: "https://github.com/krzyzanowskim/CryptoSwift.git", .upToNextMinor(from: "1.3.0")),
+        .package(url: "https://github.com/daltoniam/Starscream.git", .upToNextMinor(from: "4.0.0"))
     ],
     targets: [
         .target(

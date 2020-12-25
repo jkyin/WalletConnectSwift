@@ -65,7 +65,7 @@ class Communicator {
 
     func listen(on url: WCURL,
                 onConnect: @escaping ((WCURL) -> Void),
-                onDisconnect: @escaping ((WCURL, Error?) -> Void),
+                onDisconnect: @escaping ((WCURL, String, UInt16) -> Void),
                 onTextReceive: @escaping (String, WCURL) -> Void) {
         transport.listen(on: url,
                          onConnect: onConnect,

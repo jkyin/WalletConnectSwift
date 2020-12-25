@@ -60,7 +60,7 @@ open class WalletConnect {
     private func listen(on url: WCURL) {
         communicator.listen(on: url,
                             onConnect: onConnect(to:),
-                            onDisconnect: onDisconnect(from:error:),
+                            onDisconnect: onDisconnect(from:reason:code:),
                             onTextReceive: onTextReceive(_:from:))
     }
 
@@ -76,7 +76,7 @@ open class WalletConnect {
     /// - Parameters:
     ///   - url: WalletConnect url
     ///   - error: error that triggered the disconnection
-    private func onDisconnect(from url: WCURL, error: Error?) {
+    private func onDisconnect(from url: WCURL, reason: String, code: UInt16) {
         LogService.shared.log("WC: didDisconnect url: \(url.bridgeURL.absoluteString)")
         // check if disconnect happened during handshake
         guard let session = communicator.session(by: url) else {
