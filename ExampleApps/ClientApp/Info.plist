@@ -20,6 +20,7 @@
 	<string>1</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
+		<string>tpoutside</string>
 		<string>wc</string>
 	</array>
 	<key>LSRequiresIPhoneOS</key>

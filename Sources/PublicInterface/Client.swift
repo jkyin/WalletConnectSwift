@@ -5,7 +5,8 @@
 import Foundation
 
 public protocol ClientDelegate: class {
-    func client(_ client: Client, didFailToConnect url: WCURL)
+    func client(_ client: Client, didFailToConnect url: WCURL, error: Error?)
+    func client(_ client: Client, didConnect bridgeServer: WCURL)
     func client(_ client: Client, didConnect session: Session)
     func client(_ client: Client, didDisconnect session: Session)
 }
@@ -20,6 +21,11 @@ public class Client: WalletConnect {
     public enum ClientError: Error {
         case missingWalletInfoInSession
         case sessionNotFound
+        case sessionRejected
+    }
+    
+    deinit {
+        print("deinit: \(self)")
     }
 
     public init(delegate: ClientDelegate, dAppInfo: Session.DAppInfo) {
@@ -177,14 +183,17 @@ public class Client: WalletConnect {
         try send(request, completion: completion)
     }
 
-    override func onConnect(to url: WCURL) {
+    override func onConnect(to url: WCURL) throws {
         LogService.shared.log("WC: client didConnect url: \(url.bridgeURL.absoluteString)")
+        
+        delegate?.client(self, didConnect: url)
+        
         if let existingSession = communicator.session(by: url) {
             communicator.subscribe(on: existingSession.dAppInfo.peerId, url: existingSession.url)
             delegate?.client(self, didConnect: existingSession)
         } else { // establishing new connection, handshake in process
             communicator.subscribe(on: dAppInfo.peerId, url: url)
-            let request = try! Request(url: url, method: "wc_sessionRequest", params: [dAppInfo], id: Request.payloadId())
+            let request = try Request(url: url, method: "wc_sessionRequest", params: [dAppInfo], id: Request.payloadId())
             let requestID = request.internalID!
             responses.add(requestID: requestID) { [unowned self] response in
                 self.handleHandshakeResponse(response)
@@ -201,7 +210,7 @@ public class Client: WalletConnect {
 
             guard walletInfo.approved else {
                 // TODO: handle Error
-                delegate?.client(self, didFailToConnect: response.url)
+                delegate?.client(self, didFailToConnect: response.url, error: response.error)
                 return
             }
 
@@ -209,7 +218,7 @@ public class Client: WalletConnect {
             delegate?.client(self, didConnect: session)
         } catch {
             // TODO: handle error
-            delegate?.client(self, didFailToConnect: response.url)
+            delegate?.client(self, didFailToConnect: response.url, error: response.error)
         }
     }
 
@@ -222,15 +231,15 @@ public class Client: WalletConnect {
             }
         } else if let request = try? communicator.request(from: text, url: url) {
             log(request)
-            expectUpdateSessionRequest(request)
+            try? expectUpdateSessionRequest(request)
         }
     }
 
-    private func expectUpdateSessionRequest(_ request: Request) {
+    private func expectUpdateSessionRequest(_ request: Request) throws {
         if request.method == "wc_sessionUpdate" {
             guard let approval = sessionApproval(from: request) else {
                 // TODO: error handling
-                try! send(Response(request: request, error: .invalidJSON))
+                try send(Response(request: request, error: .invalidJSON))
                 return
             }
             guard let session = communicator.session(by: request.url), !approval else { return }
@@ -241,8 +250,8 @@ public class Client: WalletConnect {
             }
         } else {
             // TODO: error handling
-            let response = try! Response(request: request, error: .methodNotFound)
-            try! send(response)
+            let response = try Response(request: request, error: .methodNotFound)
+            try send(response)
         }
     }
 
@@ -263,7 +272,7 @@ public class Client: WalletConnect {
     }
 
     override func failedToConnect(_ url: WCURL) {
-        delegate?.client(self, didFailToConnect: url)
+        delegate?.client(self, didFailToConnect: url, error: nil)
     }
 
     override func didDisconnect(_ session: Session) {

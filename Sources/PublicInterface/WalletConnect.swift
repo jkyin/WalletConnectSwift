@@ -4,6 +4,10 @@
 
 open class WalletConnect {
     var communicator = Communicator()
+    
+    deinit {
+        print("deinit: \(self)")
+    }
 
     public init() {}
 
@@ -36,6 +40,14 @@ open class WalletConnect {
         communicator.addSession(session)
         listen(on: session.url)
     }
+    
+    open func forceDisconnect(_ session: Session) {
+        do {
+            try disconnect(from: session)
+        } catch {
+            communicator.disconnect(from: session.url)
+        }
+    }
 
     /// Disconnect from session.
     ///
@@ -59,7 +71,9 @@ open class WalletConnect {
 
     private func listen(on url: WCURL) {
         communicator.listen(on: url,
-                            onConnect: onConnect(to:),
+                            onConnect: { [weak self] url in
+                                try? self?.onConnect(to: url)
+                            },
                             onDisconnect: onDisconnect(from:reason:code:),
                             onTextReceive: onTextReceive(_:from:))
     }
@@ -67,7 +81,7 @@ open class WalletConnect {
     /// Confirmation from Transport layer that connection was successfully established.
     ///
     /// - Parameter url: WalletConnect url
-    func onConnect(to url: WCURL) {
+    func onConnect(to url: WCURL) throws {
         preconditionFailure("Should be implemented in subclasses")
     }
 

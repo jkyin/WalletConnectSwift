@@ -24,6 +24,10 @@ class WebSocketConnection {
 
     private(set) var isConnected = false
 
+    deinit {
+        print("deinit: \(self)")
+    }
+    
     init(url: WCURL,
          onConnect: (() -> Void)?,
          onDisconnect: ((String, UInt16) -> Void)?,
@@ -40,11 +44,11 @@ class WebSocketConnection {
         socket.callbackQueue = serialCallbackQueue
     }
 
-    func open() {
+    func connect() {
         socket.connect()
     }
 
-    func close() {
+    func disconnect() {
         socket.disconnect()
     }
 
@@ -62,6 +66,10 @@ class WebSocketConnection {
         } else {
             LogService.shared.log("WC: ==> \(text)")
         }
+    }
+    
+    private func handleError(_ error: Error?) {
+        LogService.shared.log("WC: Error, \(error as NSError?)")
     }
 }
 
@@ -93,9 +101,9 @@ extension WebSocketConnection: WebSocketDelegate {
             break
         case .cancelled:
             isConnected = false
-        case .error(_):
+        case let .error(error):
             isConnected = false
-//            handleError(error)
+            handleError(error)
         }
     }
 }

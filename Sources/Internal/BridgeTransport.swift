@@ -41,16 +41,20 @@ class Bridge: Transport {
             if let existingConnection = self.findConnection(url: url) {
                 connection = existingConnection
             } else {
-                connection = WebSocketConnection(url: url,
-                                                 onConnect: { onConnect(url) },
-                                                 onDisconnect: { [weak self] (reason, code) in
-                                                    self?.releaseConnection(by: url)
-                                                    onDisconnect(url, reason, code) },
-                                                 onTextReceive: { text in onTextReceive(text, url) })
+                connection = WebSocketConnection(url: url, onConnect: {
+                    onConnect(url)
+                }, onDisconnect: { [weak self] (reason, code) in
+                    self?.releaseConnection(by: url)
+                    onDisconnect(url, reason, code)
+                }, onTextReceive: { text in
+                    onTextReceive(text, url)
+                })
+                
                 self.connections.append(connection)
             }
+            
             if !connection.isConnected {
-                connection.open()
+                connection.connect()
             }
         }
     }
@@ -68,7 +72,7 @@ class Bridge: Transport {
         dispatchPrecondition(condition: .notOnQueue(syncQueue))
         syncQueue.sync { [unowned self] in
             if let connection = self.findConnection(url: url) {
-                connection.close()
+                connection.disconnect()
             }
         }
     }

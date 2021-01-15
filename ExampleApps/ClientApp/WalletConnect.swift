@@ -8,6 +8,7 @@ import WalletConnectSwift
 protocol WalletConnectDelegate {
     func failedToConnect()
     func didConnect()
+    func didConnectBridgeServer()
     func didDisconnect()
 }
 
@@ -25,17 +26,15 @@ class WalletConnect {
     func connect() -> String {
         // gnosis wc bridge: https://safe-walletconnect.gnosis.io
         // test bridge with latest protocol version: https://bridge.walletconnect.org
-        let wcUrl =  WCURL(topic: UUID().uuidString,
+        let wcUrl =  WCURL(topic: UUID().uuidString.lowercased(),
                            bridgeURL: URL(string: "https://bridge.walletconnect.org")!,
                            key: try! randomKey())
         let clientMeta = Session.ClientMeta(name: "ExampleDApp",
-                                            description: "WalletConnectSwift ",
+                                            description: "WalletConnectSwift",
                                             icons: [],
-                                            url: URL(string: "https://safe.gnosis.io")!)
-        let dAppInfo = Session.DAppInfo(peerId: UUID().uuidString, peerMeta: clientMeta)
+                                            url: URL(string: "https://jkyin.me")!)
+        let dAppInfo = Session.DAppInfo(peerId: UUID().uuidString.lowercased(), peerMeta: clientMeta)
         client = Client(delegate: self, dAppInfo: dAppInfo)
-
-        print("WalletConnect URL: \(wcUrl.absoluteString)")
 
         try! client.connect(to: wcUrl)
         return wcUrl.absoluteString
@@ -66,7 +65,7 @@ class WalletConnect {
 }
 
 extension WalletConnect: ClientDelegate {
-    func client(_ client: Client, didFailToConnect url: WCURL) {
+    func client(_ client: Client, didFailToConnect url: WCURL, error: Error?) {
         delegate.failedToConnect()
     }
 
@@ -75,6 +74,10 @@ extension WalletConnect: ClientDelegate {
         let sessionData = try! JSONEncoder().encode(session)
         UserDefaults.standard.set(sessionData, forKey: sessionKey)
         delegate.didConnect()
+    }
+    
+    func client(_ client: Client, didConnect bridgeServer: WCURL) {
+        delegate.didConnectBridgeServer()
     }
 
     func client(_ client: Client, didDisconnect session: Session) {

@@ -32,7 +32,7 @@ class ActionsViewController: UIViewController {
 
     @IBAction func disconnect(_ sender: Any) {
         guard let session = session else { return }
-        try? client.disconnect(from: session)
+        client.forceDisconnect(session)
     }
 
     // personal_sign should send a human readable message

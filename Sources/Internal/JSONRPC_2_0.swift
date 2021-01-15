@@ -171,7 +171,7 @@ enum JSONRPC_2_0 {
 
     /// https://www.jsonrpc.org/specification#request_object
     struct Request: Hashable, Codable {
-        let jsonrpc = "2.0"
+        let jsonrpc: String
         var method: String
         var params: Params?
         var id: IDType?
@@ -180,6 +180,7 @@ enum JSONRPC_2_0 {
             self.method = method
             self.params = params
             self.id = id
+            self.jsonrpc = "2.0"
         }
 
         enum Params: Hashable, Codable {
@@ -242,13 +243,14 @@ enum JSONRPC_2_0 {
 
     /// https://www.jsonrpc.org/specification#response_object
     struct Response: Hashable, Codable {
-        let jsonrpc = "2.0"
+        let jsonrpc: String
         var result: Payload
         var id: IDType
 
         init(result: Payload, id: IDType) {
             self.result = result
             self.id = id
+            self.jsonrpc = "2.0"
         }
 
         enum Payload: Hashable, Codable {

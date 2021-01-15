@@ -9,15 +9,20 @@ class MainViewController: UIViewController {
     var actionsController: ActionsViewController!
     var walletConnect: WalletConnect!
 
+    private var deepLink: URL?
+    
     @IBAction func connect(_ sender: Any) {
         let connectionUrl = walletConnect.connect()
-        let deepLinkUrl = connectionUrl.replacingOccurrences(of: "wc:", with: "wc://")
-        if let url = URL(string: deepLinkUrl), UIApplication.shared.canOpenURL(url) {
-            UIApplication.shared.open(url, options: [:], completionHandler: nil)
-        } else {
-            handshakeController = HandshakeViewController.create(code: connectionUrl)
-            present(handshakeController, animated: true)
-        }
+        deepLink = URL(string: connectionUrl.replacingOccurrences(of: "wc:", with: "tpoutside://wc?uri=wc:"))
+        
+        print("deepLink: \(deepLink)")
+        
+//        if let url = URL(string: deepLinkUrl), UIApplication.shared.canOpenURL(url) {
+//            UIApplication.shared.open(url, options: [:], completionHandler: nil)
+//        } else {
+//            handshakeController = HandshakeViewController.create(code: connectionUrl)
+//            present(handshakeController, animated: true)
+//        }
     }
 
     override func viewDidLoad() {
@@ -56,6 +61,14 @@ extension MainViewController: WalletConnectDelegate {
                 }
             } else if self.presentedViewController == nil {
                 self.present(self.actionsController, animated: false)
+            }
+        }
+    }
+    
+    func didConnectBridgeServer() {
+        onMainThread { [weak self] in
+            if let url = self?.deepLink, UIApplication.shared.canOpenURL(url) {
+                UIApplication.shared.open(url, options: [:], completionHandler: nil)
             }
         }
     }
